@@ -5,16 +5,31 @@ from sentence_transformers import SentenceTransformer
 import chromadb
 
 # ---------------------------------------------------------------------------
-# Setup — module-level singletons, loaded once on first import
+# Setup — lazy singletons to avoid OOM on low-memory hosts (e.g. Render free)
+# Model and ChromaDB are loaded on first use, not at import time
 # ---------------------------------------------------------------------------
 
-EMBED_MODEL = SentenceTransformer("all-MiniLM-L6-v2")
+_EMBED_MODEL = None
+_CHROMA_CLIENT = None
+_COLLECTION = None
 
-CHROMA_CLIENT = chromadb.PersistentClient(path="./chroma_db")
-COLLECTION = CHROMA_CLIENT.get_or_create_collection(
-    name="notes",
-    metadata={"hnsw:space": "cosine"},
-)
+
+def get_embed_model():
+    global _EMBED_MODEL
+    if _EMBED_MODEL is None:
+        _EMBED_MODEL = SentenceTransformer("all-MiniLM-L6-v2")
+    return _EMBED_MODEL
+
+
+def get_collection():
+    global _CHROMA_CLIENT, _COLLECTION
+    if _COLLECTION is None:
+        _CHROMA_CLIENT = chromadb.PersistentClient(path="./chroma_db")
+        _COLLECTION = _CHROMA_CLIENT.get_or_create_collection(
+            name="notes",
+            metadata={"hnsw:space": "cosine"},
+        )
+    return _COLLECTION
 
 
 # ---------------------------------------------------------------------------
@@ -96,7 +111,7 @@ def ingest_files(files: list[dict], user_id: str) -> dict:
         for i, chunk in enumerate(chunks):
             # Chunk ID is globally unique per user + file + position
             chunk_id = f"{user_id}__{filename}__chunk_{i}"
-            embedding = EMBED_MODEL.encode(chunk).tolist()
+            embedding = get_embed_model().encode(chunk).tolist()
 
             ids.append(chunk_id)
             embeddings.append(embedding)
@@ -109,7 +124,7 @@ def ingest_files(files: list[dict], user_id: str) -> dict:
             })
 
         # Upsert — re-uploading same file for same user overwrites cleanly
-        COLLECTION.upsert(
+        get_collection().upsert(
             ids=ids,
             embeddings=embeddings,
             documents=documents,
@@ -122,7 +137,7 @@ def ingest_files(files: list[dict], user_id: str) -> dict:
     return {
         "files_processed": files_processed,
         "total_chunks": total_chunks,
-        "collection_total": COLLECTION.count(),
+        "collection_total": get_collection().count(),
         "skipped_pages": all_skipped,  # {filename: [page_numbers]} for pages with no text
     }
 
@@ -145,11 +160,11 @@ def retrieve_notes(
     Returns [] gracefully if the user has no notes — never crashes.
     """
     # Guard: if collection is empty we can't query at all
-    total = COLLECTION.count()
+    total = get_collection().count()
     if total == 0:
         return []
 
-    query_embedding = EMBED_MODEL.encode(query).tolist()
+    query_embedding = get_embed_model().encode(query).tolist()
 
     # Build ChromaDB where filter
     if concept_id:
@@ -158,7 +173,7 @@ def retrieve_notes(
         where = {"user_id": user_id}
 
     try:
-        results = COLLECTION.query(
+        results = get_collection().query(
             query_embeddings=[query_embedding],
             n_results=min(k, total),
             where=where,
@@ -194,11 +209,11 @@ def retrieve_notes(
 
 def user_has_notes(user_id: str) -> bool:
     """Return True if this user has at least one chunk in ChromaDB."""
-    total = COLLECTION.count()
+    total = get_collection().count()
     if total == 0:
         return False
     try:
-        results = COLLECTION.get(where={"user_id": user_id}, limit=1)
+        results = get_collection().get(where={"user_id": user_id}, limit=1)
         return len(results.get("ids", [])) > 0
     except Exception:
         return False
