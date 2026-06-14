@@ -1,0 +1,11 @@
+fastapi==0.115.0
+uvicorn==0.30.6
+sqlmodel==0.0.21
+aiosqlite==0.20.0
+sentence-transformers
+chromadb
+groq
+python-dotenv
+python-multipart
+pdfplumber
+python-docx
