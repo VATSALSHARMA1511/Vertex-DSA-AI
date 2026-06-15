@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react"
 import "./App.css"
 
-const API = "http://127.0.0.1:8000"
+const API = "https://vertex-dsa-ai.onrender.com"
 
 function masteryColor(v) {
   if (v >= 0.75) return "var(--clr-green)"
