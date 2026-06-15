@@ -8,4 +8,4 @@ python-multipart
 pdfplumber
 python-docx
 chromadb==0.5.23
-fastembed
+onnxruntime
