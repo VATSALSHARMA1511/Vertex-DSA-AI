@@ -1,12 +1,13 @@
 import re
 from typing import Optional
 
-from sentence_transformers import SentenceTransformer
 import chromadb
+from fastembed import TextEmbedding
 
 # ---------------------------------------------------------------------------
 # Setup — lazy singletons to avoid OOM on low-memory hosts (e.g. Render free)
-# Model and ChromaDB are loaded on first use, not at import time
+# Uses fastembed instead of sentence-transformers — no PyTorch dependency,
+# ~50MB vs 2GB, same embedding quality for retrieval tasks
 # ---------------------------------------------------------------------------
 
 _EMBED_MODEL = None
@@ -17,7 +18,7 @@ _COLLECTION = None
 def get_embed_model():
     global _EMBED_MODEL
     if _EMBED_MODEL is None:
-        _EMBED_MODEL = SentenceTransformer("all-MiniLM-L6-v2")
+        _EMBED_MODEL = TextEmbedding("BAAI/bge-small-en-v1.5")
     return _EMBED_MODEL
 
 
@@ -111,7 +112,7 @@ def ingest_files(files: list[dict], user_id: str) -> dict:
         for i, chunk in enumerate(chunks):
             # Chunk ID is globally unique per user + file + position
             chunk_id = f"{user_id}__{filename}__chunk_{i}"
-            embedding = get_embed_model().encode(chunk).tolist()
+            embedding = list(get_embed_model().embed([chunk]))[0].tolist()
 
             ids.append(chunk_id)
             embeddings.append(embedding)
@@ -164,7 +165,7 @@ def retrieve_notes(
     if total == 0:
         return []
 
-    query_embedding = get_embed_model().encode(query).tolist()
+    query_embedding = list(get_embed_model().embed([query]))[0].tolist()
 
     # Build ChromaDB where filter
     if concept_id:

@@ -2,12 +2,10 @@ fastapi==0.115.0
 uvicorn==0.30.6
 sqlmodel==0.0.21
 aiosqlite==0.20.0
-chromadb==0.5.23
 groq
 python-dotenv
 python-multipart
 pdfplumber
 python-docx
---extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.2.2+cpu
-sentence-transformers==2.7.0
+chromadb==0.5.23
+fastembed
