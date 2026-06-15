@@ -9,4 +9,4 @@ pdfplumber
 python-docx
 numpy==1.26.4
 chromadb==0.4.24
-onnxruntime==1.17.3
+onnxruntime==1.24.1
