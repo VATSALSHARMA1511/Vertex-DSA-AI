@@ -7,5 +7,5 @@ python-dotenv
 python-multipart
 pdfplumber
 python-docx
-chromadb==0.5.23
+chromadb==0.4.24
 onnxruntime
