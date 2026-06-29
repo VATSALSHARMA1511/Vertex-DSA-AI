@@ -185,7 +185,7 @@ Built this because every DSA practice tool I used (Leetcode, GFG, Striver sheets
 
 **Vatsal Sharma**  
 B.Tech CSE, VIT Vellore (3rd year)  
-[GitHub](https://github.com/VATSALSHARMA1511) · [LinkedIn](https://linkedin.com/in/) *(add your LinkedIn)*
+[GitHub](https://github.com/VATSALSHARMA1511) · [LinkedIn](https://www.linkedin.com/in/sharmavatsal/) 
 
 ---
 
